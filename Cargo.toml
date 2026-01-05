@@ -1,12 +1,12 @@
 [package]
 name = "d365-odata-mcp"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "MCP Server for Microsoft Dynamics 365 OData API (Dataverse & Finance/Operations)"
 license = "MIT"
-repository = "https://github.com/pichason/d365-odata-mcp"
-homepage = "https://github.com/pichason/d365-odata-mcp"
-documentation = "https://github.com/pichason/d365-odata-mcp#readme"
+repository = "https://github.com/beginflints/d365-odata-mcp"
+homepage = "https://github.com/beginflints/d365-odata-mcp"
+documentation = "https://github.com/beginflints/d365-odata-mcp#readme"
 readme = "README.md"
 keywords = ["mcp", "dynamics365", "odata", "dataverse", "d365"]
 categories = ["api-bindings", "command-line-utilities"]
