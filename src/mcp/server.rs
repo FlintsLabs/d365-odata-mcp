@@ -69,6 +69,13 @@ impl D365McpServer {
                 description: "Get information about the connected D365 environment".to_string(),
                 input_schema: create_tool_schema(vec![]),
             },
+            Tool {
+                name: "get_metadata".to_string(),
+                description: "Get entity metadata from $metadata including properties and navigation properties (expandable fields). Use this to understand entity schema and available joins.".to_string(),
+                input_schema: create_tool_schema(vec![
+                    ("entity", "Entity name to get metadata for, e.g., 'CustomersV3'", true),
+                ]),
+            },
         ]
     }
 
@@ -80,6 +87,7 @@ impl D365McpServer {
             "get_entity_schema" => self.get_entity_schema(args).await,
             "get_record" => self.get_record(args).await,
             "get_environment_info" => self.get_environment_info().await,
+            "get_metadata" => self.get_metadata(args).await,
             _ => CallToolResult::error(format!("Unknown tool: {}", name)),
         }
     }
@@ -293,4 +301,56 @@ fn parse_number_arg(args: &HashMap<String, Value>, key: &str) -> Option<usize> {
             .map(|n| n as usize)
             .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
     })
+}
+
+impl D365McpServer {
+    /// Get metadata for a specific entity including properties and navigation properties
+    async fn get_metadata(&self, args: &HashMap<String, Value>) -> CallToolResult {
+        let entity = match args.get("entity").and_then(|v| v.as_str()) {
+            Some(e) => e,
+            None => return CallToolResult::error("Missing required argument: entity".to_string()),
+        };
+
+        // Fetch metadata
+        let metadata = match self.client.fetch_metadata().await {
+            Ok(m) => m,
+            Err(e) => return CallToolResult::error(format!("Failed to fetch metadata: {}", e)),
+        };
+
+        // Parse entity information
+        match crate::odata::ODataClient::parse_entity_from_metadata(&metadata, entity) {
+            Ok((properties, nav_properties, key_fields)) => {
+                let mut output = String::new();
+                
+                output.push_str(&format!("## Entity: {}\n\n", entity));
+                
+                // Key fields
+                if !key_fields.is_empty() {
+                    output.push_str("### Key Fields\n");
+                    for key in &key_fields {
+                        output.push_str(&format!("- {}\n", key));
+                    }
+                    output.push('\n');
+                }
+                
+                // Properties
+                output.push_str(&format!("### Properties ({} fields)\n", properties.len()));
+                for prop in &properties {
+                    output.push_str(&format!("- {}\n", prop));
+                }
+                output.push('\n');
+                
+                // Navigation properties (expandable)
+                if !nav_properties.is_empty() {
+                    output.push_str(&format!("### Navigation Properties (expandable via $expand) ({} fields)\n", nav_properties.len()));
+                    for nav in &nav_properties {
+                        output.push_str(&format!("- {}\n", nav));
+                    }
+                }
+                
+                CallToolResult::text(output)
+            }
+            Err(e) => CallToolResult::error(format!("Failed to parse entity metadata: {}", e)),
+        }
+    }
 }
