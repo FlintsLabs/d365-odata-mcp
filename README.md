@@ -25,6 +25,12 @@ An MCP (Model Context Protocol) server that enables AI assistants to query **Mic
 cargo install d365-odata-mcp
 ```
 
+### Upgrade to Latest Version
+
+```bash
+cargo install d365-odata-mcp --force
+```
+
 ### Step 2: Create Azure AD App
 
 1. Go to [Azure Portal](https://portal.azure.com)
