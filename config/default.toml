@@ -1,0 +1,39 @@
+# D365 OData MCP - Default Configuration
+# NOTE: Secrets should be passed via environment variables, not this file!
+
+[global]
+# Product type: "dataverse" or "finops"
+product = "dataverse"
+
+# API Endpoints:
+# - Dataverse: https://org.crm.dynamics.com/api/data/v9.2/
+# - F&O: https://org.operations.dynamics.com/data/
+# Override via D365_ENDPOINT env var
+endpoint = "https://org.crm.dynamics.com/api/data/v9.2/"
+
+# Paging & Concurrency
+page_size = 500
+concurrency = 4
+max_retries = 3
+retry_delay_ms = 1000
+
+[observability]
+log_level = "info"
+enable_tracing = false
+
+# Delta sync state storage
+[delta]
+storage_path = "./delta_state.json"
+
+# Entity configurations (optional - can also discover from $metadata)
+[[entities]]
+name = "contacts"
+initial_load = true
+delta_enabled = true
+cross_company = false
+
+[[entities]]
+name = "accounts"
+initial_load = true
+delta_enabled = true
+cross_company = false

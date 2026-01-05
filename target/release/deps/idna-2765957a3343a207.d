@@ -1,0 +1,10 @@
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/release/deps/libidna-2765957a3343a207.rmeta: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/deprecated.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/punycode.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/uts46.rs
+
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/release/deps/libidna-2765957a3343a207.rlib: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/deprecated.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/punycode.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/uts46.rs
+
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/release/deps/idna-2765957a3343a207.d: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/deprecated.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/punycode.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/uts46.rs
+
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/lib.rs:
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/deprecated.rs:
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/punycode.rs:
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/idna-1.1.0/src/uts46.rs:

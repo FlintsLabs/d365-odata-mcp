@@ -1,0 +1,10 @@
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/debug/deps/libautocfg-89e066947267bb89.rmeta: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/debug/deps/libautocfg-89e066947267bb89.rlib: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/debug/deps/autocfg-89e066947267bb89.d: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs
+
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/lib.rs:
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/error.rs:
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/rustc.rs:
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/autocfg-1.5.0/src/version.rs:

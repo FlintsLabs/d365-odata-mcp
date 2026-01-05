@@ -1,0 +1,9 @@
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/package/d365-odata-mcp-0.1.0/target/debug/deps/libhttp_body-a39644d40238f3a2.rmeta: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/frame.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/size_hint.rs
+
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/package/d365-odata-mcp-0.1.0/target/debug/deps/libhttp_body-a39644d40238f3a2.rlib: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/frame.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/size_hint.rs
+
+/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/package/d365-odata-mcp-0.1.0/target/debug/deps/http_body-a39644d40238f3a2.d: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/frame.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/size_hint.rs
+
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/lib.rs:
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/frame.rs:
+/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-body-1.0.1/src/size_hint.rs:
