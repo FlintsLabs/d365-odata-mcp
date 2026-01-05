@@ -161,13 +161,13 @@ impl ODataClient {
 
         let http_client = if insecure_ssl {
             Client::builder()
-                .timeout(Duration::from_secs(30))
+                .timeout(Duration::from_secs(120))  // Longer timeout for large $metadata
                 .danger_accept_invalid_certs(true)
                 .build()
                 .unwrap()
         } else {
             Client::builder()
-                .timeout(Duration::from_secs(30))
+                .timeout(Duration::from_secs(120))  // Longer timeout for large $metadata
                 .build()
                 .unwrap()
         };
@@ -284,7 +284,15 @@ impl ODataClient {
             return Err(ODataError::ServerError(status.as_u16(), body));
         }
 
-        Ok(response.text().await?)
+        // Get response as bytes to handle large XML and encoding issues
+        let bytes = response.bytes().await.map_err(|e| {
+            ODataError::ParseError(format!("Failed to read metadata bytes: {}", e))
+        })?;
+
+        // Convert bytes to string, handling potential encoding issues
+        let xml = String::from_utf8_lossy(&bytes).to_string();
+
+        Ok(xml)
     }
 
     /// Fetch entity data with paging support
@@ -380,6 +388,151 @@ impl ODataClient {
     /// Get product type
     pub fn product(&self) -> &ProductType {
         &self.product
+    }
+
+    /// Parse $metadata XML to extract entity information for a specific entity
+    /// Returns: (properties, navigation_properties, key_fields)
+    pub fn parse_entity_from_metadata(
+        metadata_xml: &str,
+        entity_name: &str,
+    ) -> Result<(Vec<String>, Vec<String>, Vec<String>), ODataError> {
+        use std::collections::HashSet;
+
+        let mut properties = Vec::new();
+        let mut nav_properties = Vec::new();
+        let mut key_fields = Vec::new();
+        let mut in_entity = false;
+        let mut in_key = false;
+        let mut entity_type_name = String::new();
+
+        // Simple XML parsing for entity properties
+        for line in metadata_xml.lines() {
+            let trimmed = line.trim();
+
+            // Look for EntityType definition
+            if trimmed.contains("<EntityType ") && trimmed.contains(&format!("Name=\"{}\"", entity_name)) {
+                in_entity = true;
+                entity_type_name = entity_name.to_string();
+            }
+            // Also check for EntityType that matches without exact name (for partial matches)
+            if !in_entity && trimmed.contains("<EntityType ") {
+                if let Some(start) = trimmed.find("Name=\"") {
+                    let name_start = start + 6;
+                    if let Some(end) = trimmed[name_start..].find('"') {
+                        let name = &trimmed[name_start..name_start + end];
+                        // Match entity name at start (e.g., "CustomersV3" matches "CustomersV3Type")
+                        if name.starts_with(entity_name) || entity_name.starts_with(name) {
+                            in_entity = true;
+                            entity_type_name = name.to_string();
+                        }
+                    }
+                }
+            }
+
+            if in_entity {
+                // Parse Key fields
+                if trimmed.contains("<Key>") {
+                    in_key = true;
+                }
+                if trimmed.contains("</Key>") {
+                    in_key = false;
+                }
+                if in_key && trimmed.contains("<PropertyRef ") {
+                    if let Some(start) = trimmed.find("Name=\"") {
+                        let name_start = start + 6;
+                        if let Some(end) = trimmed[name_start..].find('"') {
+                            let name = &trimmed[name_start..name_start + end];
+                            key_fields.push(name.to_string());
+                        }
+                    }
+                }
+
+                // Parse Property fields
+                if trimmed.starts_with("<Property ") && trimmed.contains("Name=\"") {
+                    if let Some(start) = trimmed.find("Name=\"") {
+                        let name_start = start + 6;
+                        if let Some(end) = trimmed[name_start..].find('"') {
+                            let name = &trimmed[name_start..name_start + end];
+                            // Get type if available
+                            let prop_type = if let Some(type_start) = trimmed.find("Type=\"") {
+                                let ts = type_start + 6;
+                                if let Some(te) = trimmed[ts..].find('"') {
+                                    Some(trimmed[ts..ts + te].to_string())
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
+                            };
+
+                            let prop_str = match prop_type {
+                                Some(t) => format!("{}: {}", name, t.replace("Edm.", "")),
+                                None => name.to_string(),
+                            };
+                            properties.push(prop_str);
+                        }
+                    }
+                }
+
+                // Parse NavigationProperty fields (expandable)
+                if trimmed.starts_with("<NavigationProperty ") && trimmed.contains("Name=\"") {
+                    if let Some(start) = trimmed.find("Name=\"") {
+                        let name_start = start + 6;
+                        if let Some(end) = trimmed[name_start..].find('"') {
+                            let name = &trimmed[name_start..name_start + end];
+                            // Get type/target if available
+                            let nav_type = if let Some(type_start) = trimmed.find("Type=\"") {
+                                let ts = type_start + 6;
+                                if let Some(te) = trimmed[ts..].find('"') {
+                                    Some(trimmed[ts..ts + te].to_string())
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
+                            };
+
+                            let nav_str = match nav_type {
+                                Some(t) => {
+                                    // Clean up type string
+                                    let clean_type = t
+                                        .replace("Collection(", "")
+                                        .replace(")", "")
+                                        .split('.')
+                                        .last()
+                                        .unwrap_or(&t)
+                                        .to_string();
+                                    if t.contains("Collection") {
+                                        format!("{} -> [{}]", name, clean_type)
+                                    } else {
+                                        format!("{} -> {}", name, clean_type)
+                                    }
+                                }
+                                None => name.to_string(),
+                            };
+                            nav_properties.push(nav_str);
+                        }
+                    }
+                }
+
+                // End of EntityType
+                if trimmed == "</EntityType>" {
+                    if !properties.is_empty() || !nav_properties.is_empty() {
+                        break; // Found the entity, stop parsing
+                    }
+                    in_entity = false;
+                }
+            }
+        }
+
+        if properties.is_empty() && nav_properties.is_empty() {
+            return Err(ODataError::NotFound(format!(
+                "Entity '{}' not found in metadata",
+                entity_name
+            )));
+        }
+
+        Ok((properties, nav_properties, key_fields))
     }
 }
 
