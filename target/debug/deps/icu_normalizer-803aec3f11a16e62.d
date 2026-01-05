@@ -1,8 +1,0 @@
-/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/debug/deps/libicu_normalizer-803aec3f11a16e62.rmeta: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/properties.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/provider.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/uts46.rs
-
-/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/debug/deps/icu_normalizer-803aec3f11a16e62.d: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/properties.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/provider.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/uts46.rs
-
-/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/lib.rs:
-/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/properties.rs:
-/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/provider.rs:
-/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/icu_normalizer-2.1.1/src/uts46.rs:

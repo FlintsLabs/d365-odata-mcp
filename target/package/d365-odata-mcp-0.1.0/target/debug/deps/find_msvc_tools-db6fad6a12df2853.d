@@ -1,9 +1,0 @@
-/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/package/d365-odata-mcp-0.1.0/target/debug/deps/libfind_msvc_tools-db6fad6a12df2853.rmeta: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/find_tools.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/tool.rs
-
-/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/package/d365-odata-mcp-0.1.0/target/debug/deps/libfind_msvc_tools-db6fad6a12df2853.rlib: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/find_tools.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/tool.rs
-
-/Users/kanokpichasonsmacbookair/RustroverProjects/D365OdataMcp/target/package/d365-odata-mcp-0.1.0/target/debug/deps/find_msvc_tools-db6fad6a12df2853.d: /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/lib.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/find_tools.rs /Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/tool.rs
-
-/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/lib.rs:
-/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/find_tools.rs:
-/Users/kanokpichasonsmacbookair/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/find-msvc-tools-0.1.6/src/tool.rs:
