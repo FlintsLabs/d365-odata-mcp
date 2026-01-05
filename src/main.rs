@@ -118,6 +118,7 @@ fn create_server() -> Result<D365McpServer, Box<dyn std::error::Error>> {
         client_secret: runtime_config.client_secret.clone(),
         token_url: runtime_config.token_url.clone(),
         resource: runtime_config.resource.clone(),
+        insecure_ssl: runtime_config.insecure_ssl,
     };
 
     let auth = Arc::new(OAuth2Auth::new(auth_config));

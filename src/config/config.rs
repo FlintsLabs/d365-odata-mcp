@@ -93,6 +93,8 @@ pub struct RuntimeConfig {
     pub token_url: Option<String>,
     /// Resource/audience (for ADFS)
     pub resource: Option<String>,
+    /// Skip SSL certificate verification (for self-signed certs)
+    pub insecure_ssl: bool,
     pub page_size: usize,
     pub concurrency: usize,
     pub max_retries: u32,
@@ -172,6 +174,11 @@ impl Config {
         // Resource/audience (for ADFS) 
         let resource = env::var("RESOURCE").ok();
 
+        // Skip SSL verification (for self-signed certificates)
+        let insecure_ssl = env::var("INSECURE_SSL")
+            .map(|v| v.to_lowercase() == "true" || v == "1")
+            .unwrap_or(false);
+
         Ok(RuntimeConfig {
             product,
             endpoint,
@@ -181,6 +188,7 @@ impl Config {
             auth_type,
             token_url,
             resource,
+            insecure_ssl,
             page_size: self.global.page_size.unwrap_or(500),
             concurrency: self.global.concurrency.unwrap_or(4),
             max_retries: self.global.max_retries.unwrap_or(3),
