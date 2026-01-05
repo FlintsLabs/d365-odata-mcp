@@ -91,6 +91,8 @@ pub struct AuthConfig {
     pub token_url: Option<String>,
     /// Resource/audience (required for ADFS)
     pub resource: Option<String>,
+    /// Skip SSL certificate verification (for self-signed certs)
+    pub insecure_ssl: bool,
 }
 
 /// Unified OAuth2 authentication helper
@@ -104,9 +106,18 @@ pub struct OAuth2Auth {
 impl OAuth2Auth {
     /// Create a new OAuth2 auth helper
     pub fn new(config: AuthConfig) -> Self {
+        let http_client = if config.insecure_ssl {
+            Client::builder()
+                .danger_accept_invalid_certs(true)
+                .build()
+                .unwrap_or_else(|_| Client::new())
+        } else {
+            Client::new()
+        };
+        
         Self {
             config,
-            http_client: Client::new(),
+            http_client,
             token_cache: Arc::new(RwLock::new(None)),
         }
     }
@@ -259,6 +270,7 @@ impl OAuth2Auth {
             client_secret,
             token_url: None,
             resource: None,
+            insecure_ssl: false,
         })
     }
 }
