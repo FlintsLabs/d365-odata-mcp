@@ -71,10 +71,15 @@ impl D365McpServer {
             },
             Tool {
                 name: "get_metadata".to_string(),
-                description: "Get entity metadata from $metadata including properties and navigation properties (expandable fields). Use this to understand entity schema and available joins.".to_string(),
+                description: "Get entity metadata from $metadata including properties and navigation properties (expandable fields). Use this to understand entity schema and available joins. Results are cached for performance.".to_string(),
                 input_schema: create_tool_schema(vec![
                     ("entity", "Entity name to get metadata for, e.g., 'CustomersV3'", true),
                 ]),
+            },
+            Tool {
+                name: "refresh_metadata".to_string(),
+                description: "Force refresh the cached $metadata. Use this if entity schema has changed or if you need fresh metadata. Returns cache status after refresh.".to_string(),
+                input_schema: create_tool_schema(vec![]),
             },
         ]
     }
@@ -88,6 +93,7 @@ impl D365McpServer {
             "get_record" => self.get_record(args).await,
             "get_environment_info" => self.get_environment_info().await,
             "get_metadata" => self.get_metadata(args).await,
+            "refresh_metadata" => self.refresh_metadata().await,
             _ => CallToolResult::error(format!("Unknown tool: {}", name)),
         }
     }
@@ -304,6 +310,29 @@ fn parse_number_arg(args: &HashMap<String, Value>, key: &str) -> Option<usize> {
 }
 
 impl D365McpServer {
+    /// Force refresh metadata cache
+    async fn refresh_metadata(&self) -> CallToolResult {
+        // Invalidate cache
+        self.client.invalidate_metadata_cache().await;
+
+        // Fetch fresh metadata
+        match self.client.fetch_metadata().await {
+            Ok(metadata) => {
+                let size_kb = metadata.len() / 1024;
+                let entity_count = extract_entity_sets_from_metadata(&metadata).len();
+
+                CallToolResult::text(format!(
+                    "Metadata cache refreshed successfully.\n\
+                     - Size: {} KB\n\
+                     - Entities found: {}",
+                    size_kb,
+                    entity_count
+                ))
+            }
+            Err(e) => CallToolResult::error(format!("Failed to refresh metadata: {}", e)),
+        }
+    }
+
     /// Get metadata for a specific entity including properties and navigation properties
     async fn get_metadata(&self, args: &HashMap<String, Value>) -> CallToolResult {
         let entity = match args.get("entity").and_then(|v| v.as_str()) {

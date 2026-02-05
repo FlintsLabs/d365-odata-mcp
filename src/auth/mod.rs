@@ -281,11 +281,15 @@ mod tests {
 
     #[test]
     fn test_create_azure_auth() {
-        let auth = AzureAdAuth::new(
-            "tenant-id".to_string(),
-            "client-id".to_string(),
-            "secret".to_string(),
-        );
+        let auth = AzureAdAuth::new(AuthConfig {
+            auth_type: AuthType::AzureAd,
+            tenant_id: "tenant-id".to_string(),
+            client_id: "client-id".to_string(),
+            client_secret: "secret".to_string(),
+            token_url: None,
+            resource: None,
+            insecure_ssl: false,
+        });
         assert_eq!(auth.config.tenant_id, "tenant-id");
         assert_eq!(auth.config.client_id, "client-id");
         assert_eq!(auth.config.auth_type, AuthType::AzureAd);
@@ -300,6 +304,7 @@ mod tests {
             client_secret: "secret".to_string(),
             token_url: Some("https://fs.example.com/adfs/oauth2/token".to_string()),
             resource: Some("https://d365.example.com".to_string()),
+            insecure_ssl: false,
         });
         assert_eq!(auth.config.auth_type, AuthType::Adfs);
         assert_eq!(auth.token_endpoint(), "https://fs.example.com/adfs/oauth2/token");
@@ -307,11 +312,15 @@ mod tests {
 
     #[test]
     fn test_azure_token_endpoint() {
-        let auth = AzureAdAuth::new(
-            "my-tenant".to_string(),
-            "client-id".to_string(),
-            "secret".to_string(),
-        );
+        let auth = AzureAdAuth::new(AuthConfig {
+            auth_type: AuthType::AzureAd,
+            tenant_id: "my-tenant".to_string(),
+            client_id: "client-id".to_string(),
+            client_secret: "secret".to_string(),
+            token_url: None,
+            resource: None,
+            insecure_ssl: false,
+        });
         assert_eq!(
             auth.token_endpoint(),
             "https://login.microsoftonline.com/my-tenant/oauth2/v2.0/token"

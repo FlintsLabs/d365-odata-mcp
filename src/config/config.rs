@@ -103,6 +103,8 @@ pub struct RuntimeConfig {
     pub enable_tracing: bool,
     pub delta_storage_path: String,
     pub entities: Vec<EntityConfig>,
+    /// Metadata cache TTL in seconds (default: 900 = 15 minutes)
+    pub metadata_cache_ttl_secs: u64,
 }
 
 impl Config {
@@ -179,6 +181,12 @@ impl Config {
             .map(|v| v.to_lowercase() == "true" || v == "1")
             .unwrap_or(false);
 
+        // Metadata cache TTL in seconds (default: 900 = 15 minutes)
+        let metadata_cache_ttl_secs = env::var("METADATA_CACHE_TTL")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(900);
+
         Ok(RuntimeConfig {
             product,
             endpoint,
@@ -197,6 +205,7 @@ impl Config {
             enable_tracing: obs.enable_tracing.unwrap_or(false),
             delta_storage_path: delta.storage_path.unwrap_or_else(|| "./delta_state.json".to_string()),
             entities: self.entities.clone().unwrap_or_default(),
+            metadata_cache_ttl_secs,
         })
     }
 }
