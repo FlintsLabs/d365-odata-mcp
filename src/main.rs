@@ -101,7 +101,8 @@ async fn async_main() {
 
 fn create_server() -> Result<D365McpServer, Box<dyn std::error::Error>> {
     use d365_odata_mcp::auth::{AuthConfig, AuthType, OAuth2Auth};
-    
+    use std::time::Duration;
+
     let config = Config::load_default()?;
     let runtime_config = config.to_runtime()?;
 
@@ -110,6 +111,7 @@ fn create_server() -> Result<D365McpServer, Box<dyn std::error::Error>> {
         .unwrap_or(AuthType::AzureAd);
 
     log_to_file(&format!("Auth type: {:?}", auth_type));
+    log_to_file(&format!("Metadata cache TTL: {} seconds", runtime_config.metadata_cache_ttl_secs));
 
     let auth_config = AuthConfig {
         auth_type,
@@ -123,13 +125,15 @@ fn create_server() -> Result<D365McpServer, Box<dyn std::error::Error>> {
 
     let auth = Arc::new(OAuth2Auth::new(auth_config));
 
-    let client = Arc::new(ODataClient::new(
+    let cache_ttl = Duration::from_secs(runtime_config.metadata_cache_ttl_secs);
+    let client = Arc::new(ODataClient::with_cache_ttl(
         auth,
         runtime_config.endpoint.clone(),
         runtime_config.product.clone(),
         runtime_config.max_retries,
         runtime_config.retry_delay_ms,
         runtime_config.insecure_ssl,
+        cache_ttl,
     ));
 
     Ok(D365McpServer::new(client, Arc::new(runtime_config)))

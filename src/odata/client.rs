@@ -9,8 +9,9 @@ use reqwest::{Client, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use thiserror::Error;
+use tokio::sync::RwLock;
 use tokio::time::sleep;
 
 /// OData client errors
@@ -123,8 +124,17 @@ pub struct EntityInfo {
     pub description: Option<String>,
 }
 
-/// OData client for D365 APIs
+/// Cached metadata with timestamp for TTL-based expiry
 #[derive(Debug)]
+struct CachedMetadata {
+    xml: String,
+    fetched_at: Instant,
+}
+
+/// Default metadata cache TTL in seconds (15 minutes)
+const DEFAULT_METADATA_CACHE_TTL_SECS: u64 = 900;
+
+/// OData client for D365 APIs
 pub struct ODataClient {
     auth: Arc<AzureAdAuth>,
     endpoint: String,
@@ -132,6 +142,10 @@ pub struct ODataClient {
     http_client: Client,
     max_retries: u32,
     retry_delay_ms: u64,
+    /// Cached metadata XML with TTL
+    metadata_cache: Arc<RwLock<Option<CachedMetadata>>>,
+    /// Cache TTL duration
+    cache_ttl: Duration,
 }
 
 impl ODataClient {
@@ -151,6 +165,36 @@ impl ODataClient {
         max_retries: u32,
         retry_delay_ms: u64,
         insecure_ssl: bool,
+    ) -> Self {
+        Self::with_cache_ttl(
+            auth,
+            endpoint,
+            product,
+            max_retries,
+            retry_delay_ms,
+            insecure_ssl,
+            Duration::from_secs(DEFAULT_METADATA_CACHE_TTL_SECS),
+        )
+    }
+
+    /// Create a new OData client with custom cache TTL
+    ///
+    /// # Arguments
+    /// * `auth` - Azure AD auth helper
+    /// * `endpoint` - Service root URL
+    /// * `product` - Product type (Dataverse or F&O)
+    /// * `max_retries` - Maximum retry attempts for failed requests
+    /// * `retry_delay_ms` - Initial delay between retries in milliseconds
+    /// * `insecure_ssl` - Skip SSL certificate verification
+    /// * `cache_ttl` - Metadata cache TTL duration
+    pub fn with_cache_ttl(
+        auth: Arc<AzureAdAuth>,
+        endpoint: String,
+        product: ProductType,
+        max_retries: u32,
+        retry_delay_ms: u64,
+        insecure_ssl: bool,
+        cache_ttl: Duration,
     ) -> Self {
         // Ensure endpoint ends with /
         let endpoint = if endpoint.ends_with('/') {
@@ -179,6 +223,8 @@ impl ODataClient {
             http_client,
             max_retries,
             retry_delay_ms,
+            metadata_cache: Arc::new(RwLock::new(None)),
+            cache_ttl,
         }
     }
 
@@ -265,8 +311,46 @@ impl ODataClient {
         }
     }
 
-    /// Fetch $metadata XML
+    /// Fetch $metadata XML with caching
+    ///
+    /// Returns cached metadata if available and not expired.
+    /// Otherwise fetches from server and updates cache.
     pub async fn fetch_metadata(&self) -> Result<String, ODataError> {
+        // 1. Check cache first (read lock)
+        {
+            let cache = self.metadata_cache.read().await;
+            if let Some(ref cached) = *cache {
+                if cached.fetched_at.elapsed() < self.cache_ttl {
+                    tracing::debug!(
+                        "Metadata cache hit (age: {:?}, ttl: {:?})",
+                        cached.fetched_at.elapsed(),
+                        self.cache_ttl
+                    );
+                    return Ok(cached.xml.clone());
+                }
+                tracing::debug!("Metadata cache expired, will refresh");
+            }
+        }
+
+        // 2. Cache miss or expired - fetch from server
+        tracing::debug!("Fetching metadata from server...");
+        let xml = self.fetch_metadata_from_server().await?;
+
+        // 3. Update cache (write lock)
+        {
+            let mut cache = self.metadata_cache.write().await;
+            *cache = Some(CachedMetadata {
+                xml: xml.clone(),
+                fetched_at: Instant::now(),
+            });
+            tracing::debug!("Metadata cached (size: {} bytes, ttl: {:?})", xml.len(), self.cache_ttl);
+        }
+
+        Ok(xml)
+    }
+
+    /// Fetch $metadata XML directly from server (bypasses cache)
+    async fn fetch_metadata_from_server(&self) -> Result<String, ODataError> {
         let url = format!("{}$metadata", self.endpoint);
         let token = self.auth.get_token(&self.resource()).await?;
 
@@ -293,6 +377,19 @@ impl ODataClient {
         let xml = String::from_utf8_lossy(&bytes).to_string();
 
         Ok(xml)
+    }
+
+    /// Invalidate metadata cache, forcing next fetch to retrieve from server
+    pub async fn invalidate_metadata_cache(&self) {
+        let mut cache = self.metadata_cache.write().await;
+        *cache = None;
+        tracing::debug!("Metadata cache invalidated");
+    }
+
+    /// Get metadata cache status for diagnostics
+    pub async fn metadata_cache_status(&self) -> Option<(usize, Duration)> {
+        let cache = self.metadata_cache.read().await;
+        cache.as_ref().map(|c| (c.xml.len(), c.fetched_at.elapsed()))
     }
 
     /// Fetch entity data with paging support
@@ -556,6 +653,7 @@ mod tests {
             orderby: Some("name asc".to_string()),
             expand: None,
             cross_company: false,
+            count: false,
         };
 
         let query = options.to_query_string(&ProductType::Dataverse);

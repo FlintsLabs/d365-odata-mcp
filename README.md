@@ -13,7 +13,8 @@ An MCP (Model Context Protocol) server that enables AI assistants to query **Mic
 - ✅ **ADFS** authentication (On-premise D365)
 - ✅ Automatic token refresh
 - ✅ Retry with exponential backoff
-- ✅ Works with OpenAI Codex, Claude Desktop, and other MCP clients
+- ✅ **Metadata caching** with configurable TTL for improved performance
+- ✅ Works with OpenAI Codex, Claude Desktop, Claude Code, and other MCP clients
 
 ---
 
@@ -184,6 +185,19 @@ Get D365 environment information:
 "Show D365 environment info"
 ```
 
+### 6. `get_metadata`
+Get entity metadata including properties and navigation properties (expandable fields):
+```
+"Get metadata for CustomersV3"
+"Show me the schema and expandable fields for SalesOrderHeaders"
+```
+
+### 7. `refresh_metadata`
+Force refresh the cached metadata (useful when schema changes):
+```
+"Refresh metadata cache"
+```
+
 ---
 
 ## Environment Variables
@@ -198,6 +212,8 @@ Get D365 environment information:
 | `AUTH_TYPE` | `azure` (default) or `adfs` | ❌ |
 | `TOKEN_URL` | Custom token URL (ADFS only) | ❌ |
 | `RESOURCE` | Resource/audience (ADFS only) | ❌ |
+| `METADATA_CACHE_TTL` | Metadata cache TTL in seconds (default: 900 = 15 min) | ❌ |
+| `INSECURE_SSL` | Skip SSL verification for self-signed certs (`true`/`false`) | ❌ |
 
 ---
 
