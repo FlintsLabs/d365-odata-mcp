@@ -77,7 +77,14 @@ Get a specific record by ID:
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_record","arguments":{"entity":"CustomersV3","id":"CUS-000001"}}}' | d365-odata-mcp 2>/dev/null
 ```
 
-### 5. get_environment_info
+### 5. delete_record
+Delete a specific record by OData key. The call is blocked unless `confirm` is exactly `DELETE`.
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"delete_record","arguments":{"entity":"CustomersV3","key":"dataAreaId='\''bc'\'',CustomerAccount='\''CUS-000001'\''","confirm":"DELETE"}}}' | d365-odata-mcp 2>/dev/null
+```
+
+### 6. get_environment_info
 Get information about the connected D365 environment:
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_environment_info","arguments":{}}}' | d365-odata-mcp 2>/dev/null

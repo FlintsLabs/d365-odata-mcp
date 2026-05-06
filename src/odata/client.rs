@@ -5,7 +5,7 @@
 
 use crate::auth::AzureAdAuth;
 use crate::config::config::ProductType;
-use reqwest::{Client, Response, StatusCode};
+use reqwest::{Client, Method, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
@@ -205,13 +205,13 @@ impl ODataClient {
 
         let http_client = if insecure_ssl {
             Client::builder()
-                .timeout(Duration::from_secs(120))  // Longer timeout for large $metadata
+                .timeout(Duration::from_secs(120)) // Longer timeout for large $metadata
                 .danger_accept_invalid_certs(true)
                 .build()
                 .unwrap()
         } else {
             Client::builder()
-                .timeout(Duration::from_secs(120))  // Longer timeout for large $metadata
+                .timeout(Duration::from_secs(120)) // Longer timeout for large $metadata
                 .build()
                 .unwrap()
         };
@@ -236,8 +236,10 @@ impl ODataClient {
     /// Execute HTTP request with retry logic
     async fn execute_with_retry(
         &self,
+        method: Method,
         url: &str,
         token: &str,
+        if_match: Option<&str>,
     ) -> Result<Response, ODataError> {
         let mut attempt = 0;
         let mut delay = self.retry_delay_ms;
@@ -245,16 +247,20 @@ impl ODataClient {
         loop {
             attempt += 1;
 
-            let response = self
+            let mut request = self
                 .http_client
-                .get(url)
+                .request(method.clone(), url)
                 .header("Authorization", format!("Bearer {}", token))
                 .header("Accept", "application/json")
                 .header("OData-MaxVersion", "4.0")
                 .header("OData-Version", "4.0")
-                .header("Prefer", "odata.include-annotations=*")
-                .send()
-                .await?;
+                .header("Prefer", "odata.include-annotations=*");
+
+            if let Some(if_match) = if_match {
+                request = request.header("If-Match", if_match);
+            }
+
+            let response = request.send().await?;
 
             match response.status() {
                 StatusCode::OK | StatusCode::CREATED | StatusCode::NO_CONTENT => {
@@ -343,7 +349,11 @@ impl ODataClient {
                 xml: xml.clone(),
                 fetched_at: Instant::now(),
             });
-            tracing::debug!("Metadata cached (size: {} bytes, ttl: {:?})", xml.len(), self.cache_ttl);
+            tracing::debug!(
+                "Metadata cached (size: {} bytes, ttl: {:?})",
+                xml.len(),
+                self.cache_ttl
+            );
         }
 
         Ok(xml)
@@ -369,9 +379,10 @@ impl ODataClient {
         }
 
         // Get response as bytes to handle large XML and encoding issues
-        let bytes = response.bytes().await.map_err(|e| {
-            ODataError::ParseError(format!("Failed to read metadata bytes: {}", e))
-        })?;
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|e| ODataError::ParseError(format!("Failed to read metadata bytes: {}", e)))?;
 
         // Convert bytes to string, handling potential encoding issues
         let xml = String::from_utf8_lossy(&bytes).to_string();
@@ -389,7 +400,9 @@ impl ODataClient {
     /// Get metadata cache status for diagnostics
     pub async fn metadata_cache_status(&self) -> Option<(usize, Duration)> {
         let cache = self.metadata_cache.read().await;
-        cache.as_ref().map(|c| (c.xml.len(), c.fetched_at.elapsed()))
+        cache
+            .as_ref()
+            .map(|c| (c.xml.len(), c.fetched_at.elapsed()))
     }
 
     /// Fetch entity data with paging support
@@ -415,7 +428,9 @@ impl ODataClient {
         tracing::debug!("Fetching: {}", url);
 
         let token = self.auth.get_token(&self.resource()).await?;
-        let response = self.execute_with_retry(&url, &token).await?;
+        let response = self
+            .execute_with_retry(Method::GET, &url, &token, None)
+            .await?;
 
         let odata_response: ODataResponse = response.json().await.map_err(|e| {
             ODataError::ParseError(format!("Failed to parse OData response: {}", e))
@@ -461,20 +476,34 @@ impl ODataClient {
     }
 
     /// Get single entity by key
-    pub async fn get_entity(
+    pub async fn get_entity(&self, entity: &str, key: &str) -> Result<Value, ODataError> {
+        let url = format!("{}{}({})", self.endpoint, entity, key);
+        let token = self.auth.get_token(&self.resource()).await?;
+        let response = self
+            .execute_with_retry(Method::GET, &url, &token, None)
+            .await?;
+
+        let value: Value = response
+            .json()
+            .await
+            .map_err(|e| ODataError::ParseError(format!("Failed to parse entity: {}", e)))?;
+
+        Ok(value)
+    }
+
+    /// Delete a single entity by key expression.
+    pub async fn delete_entity(
         &self,
         entity: &str,
         key: &str,
-    ) -> Result<Value, ODataError> {
+        if_match: Option<&str>,
+    ) -> Result<(), ODataError> {
         let url = format!("{}{}({})", self.endpoint, entity, key);
         let token = self.auth.get_token(&self.resource()).await?;
-        let response = self.execute_with_retry(&url, &token).await?;
+        self.execute_with_retry(Method::DELETE, &url, &token, if_match.or(Some("*")))
+            .await?;
 
-        let value: Value = response.json().await.map_err(|e| {
-            ODataError::ParseError(format!("Failed to parse entity: {}", e))
-        })?;
-
-        Ok(value)
+        Ok(())
     }
 
     /// Get endpoint URL
@@ -493,23 +522,21 @@ impl ODataClient {
         metadata_xml: &str,
         entity_name: &str,
     ) -> Result<(Vec<String>, Vec<String>, Vec<String>), ODataError> {
-        use std::collections::HashSet;
-
         let mut properties = Vec::new();
         let mut nav_properties = Vec::new();
         let mut key_fields = Vec::new();
         let mut in_entity = false;
         let mut in_key = false;
-        let mut entity_type_name = String::new();
 
         // Simple XML parsing for entity properties
         for line in metadata_xml.lines() {
             let trimmed = line.trim();
 
             // Look for EntityType definition
-            if trimmed.contains("<EntityType ") && trimmed.contains(&format!("Name=\"{}\"", entity_name)) {
+            if trimmed.contains("<EntityType ")
+                && trimmed.contains(&format!("Name=\"{}\"", entity_name))
+            {
                 in_entity = true;
-                entity_type_name = entity_name.to_string();
             }
             // Also check for EntityType that matches without exact name (for partial matches)
             if !in_entity && trimmed.contains("<EntityType ") {
@@ -520,7 +547,6 @@ impl ODataClient {
                         // Match entity name at start (e.g., "CustomersV3" matches "CustomersV3Type")
                         if name.starts_with(entity_name) || entity_name.starts_with(name) {
                             in_entity = true;
-                            entity_type_name = name.to_string();
                         }
                     }
                 }

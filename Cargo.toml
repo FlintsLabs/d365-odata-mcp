@@ -1,6 +1,6 @@
 [package]
 name = "d365-odata-mcp"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2021"
 description = "MCP Server for Microsoft Dynamics 365 OData API (Dataverse & Finance/Operations)"
 license = "MIT"
@@ -11,7 +11,7 @@ readme = "README.md"
 keywords = ["mcp", "dynamics365", "odata", "dataverse", "d365"]
 categories = ["api-bindings", "command-line-utilities"]
 authors = ["Pichason <pichason@example.com>"]
-rust-version = "1.75.0"
+rust-version = "1.83.0"
 
 [[bin]]
 name = "d365-odata-mcp"

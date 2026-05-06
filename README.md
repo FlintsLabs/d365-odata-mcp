@@ -179,20 +179,36 @@ Get a single record by ID:
 "Get customer record with ID 'CUS-001'"
 ```
 
-### 5. `get_environment_info`
+### 5. `delete_record`
+Delete a single record by OData key. This tool requires `confirm` to be exactly `DELETE`.
+
+| Parameter | Description | Required |
+|-----------|-------------|----------|
+| `entity` | Entity name, e.g., `CustomersV3` | ✅ |
+| `key` | OData key expression without parentheses, e.g., `dataAreaId='bc',CustomerAccount='CUS-001'` | ❌ |
+| `id` | Simple record ID/key, used when `key` is not provided | ❌ |
+| `if_match` | Optional `If-Match` header value (default: `*`) | ❌ |
+| `confirm` | Must be exactly `DELETE` | ✅ |
+
+**Example:**
+```
+"Delete CustomersV3 with key dataAreaId='bc',CustomerAccount='CUS-001' and confirm DELETE"
+```
+
+### 6. `get_environment_info`
 Get D365 environment information:
 ```
 "Show D365 environment info"
 ```
 
-### 6. `get_metadata`
+### 7. `get_metadata`
 Get entity metadata including properties and navigation properties (expandable fields):
 ```
 "Get metadata for CustomersV3"
 "Show me the schema and expandable fields for SalesOrderHeaders"
 ```
 
-### 7. `refresh_metadata`
+### 8. `refresh_metadata`
 Force refresh the cached metadata (useful when schema changes):
 ```
 "Refresh metadata cache"

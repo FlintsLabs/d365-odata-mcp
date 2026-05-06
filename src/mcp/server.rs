@@ -65,6 +65,17 @@ impl D365McpServer {
                 ]),
             },
             Tool {
+                name: "delete_record".to_string(),
+                description: "Delete a single D365 record by OData key. Requires confirm='DELETE' to prevent accidental deletion.".to_string(),
+                input_schema: create_tool_schema(vec![
+                    ("entity", "Entity set name, e.g., 'CustomersV3', 'SalesOrderHeaders'", true),
+                    ("key", "OData key expression without parentheses, e.g., \"dataAreaId='bc',SalesOrderNumber='SO-001'\". Use this for composite keys.", false),
+                    ("id", "Simple record ID/key. Used only when key is not provided.", false),
+                    ("if_match", "Optional If-Match header value. Defaults to '*'.", false),
+                    ("confirm", "Must be exactly 'DELETE' to execute the deletion.", true),
+                ]),
+            },
+            Tool {
                 name: "get_environment_info".to_string(),
                 description: "Get information about the connected D365 environment".to_string(),
                 input_schema: create_tool_schema(vec![]),
@@ -91,6 +102,7 @@ impl D365McpServer {
             "query_entity" => self.query_entity(args).await,
             "get_entity_schema" => self.get_entity_schema(args).await,
             "get_record" => self.get_record(args).await,
+            "delete_record" => self.delete_record(args).await,
             "get_environment_info" => self.get_environment_info().await,
             "get_metadata" => self.get_metadata(args).await,
             "refresh_metadata" => self.refresh_metadata().await,
@@ -122,10 +134,16 @@ impl D365McpServer {
             .map(|s| s.split(',').map(|f| f.trim().to_string()).collect());
 
         // Parse filter
-        let filter = args.get("filter").and_then(|v| v.as_str()).map(String::from);
+        let filter = args
+            .get("filter")
+            .and_then(|v| v.as_str())
+            .map(String::from);
 
         // Parse orderby
-        let orderby = args.get("orderby").and_then(|v| v.as_str()).map(String::from);
+        let orderby = args
+            .get("orderby")
+            .and_then(|v| v.as_str())
+            .map(String::from);
 
         // Parse top (with max limit 1000)
         let top = parse_number_arg(args, "top").unwrap_or(50).min(1000);
@@ -171,18 +189,18 @@ impl D365McpServer {
                     .unwrap_or_else(|_| "[]".to_string());
 
                 let mut result = String::new();
-                
+
                 if let Some(total) = total_count {
                     result.push_str(&format!("Total records: {}\n", total));
                 }
-                
+
                 result.push_str(&format!(
                     "Showing {} records{}:\n\n{}",
                     record_count,
                     if has_more { " (more available)" } else { "" },
                     json
                 ));
-                
+
                 CallToolResult::text(result)
             }
             Err(e) => CallToolResult::error(format!("Error querying {}: {}", entity, e)),
@@ -214,7 +232,9 @@ impl D365McpServer {
                         );
                         CallToolResult::text(result)
                     } else {
-                        CallToolResult::text(serde_json::to_string_pretty(&sample).unwrap_or_default())
+                        CallToolResult::text(
+                            serde_json::to_string_pretty(&sample).unwrap_or_default(),
+                        )
                     }
                 } else {
                     CallToolResult::text(format!("No records found in entity '{}'", entity))
@@ -251,6 +271,35 @@ impl D365McpServer {
         }
     }
 
+    async fn delete_record(&self, args: &HashMap<String, Value>) -> CallToolResult {
+        let entity = match args.get("entity").and_then(|v| v.as_str()) {
+            Some(e) => e,
+            None => return CallToolResult::error("Missing required parameter: entity".to_string()),
+        };
+
+        let confirm = args.get("confirm").and_then(|v| v.as_str()).unwrap_or("");
+        if confirm != "DELETE" {
+            return CallToolResult::error(
+                "Deletion not executed. Set confirm to exactly 'DELETE'.".to_string(),
+            );
+        }
+
+        let key = match parse_delete_key(args) {
+            Ok(key) => key,
+            Err(message) => return CallToolResult::error(message),
+        };
+
+        let if_match = args.get("if_match").and_then(|v| v.as_str());
+
+        match self.client.delete_entity(entity, &key, if_match).await {
+            Ok(()) => CallToolResult::text(format!(
+                "Deleted record from entity '{}' with key ({})",
+                entity, key
+            )),
+            Err(e) => CallToolResult::error(format!("Error deleting {}({}): {}", entity, key, e)),
+        }
+    }
+
     async fn get_environment_info(&self) -> CallToolResult {
         let info = format!(
             "D365 Environment Info:\n\
@@ -269,6 +318,50 @@ impl D365McpServer {
                 .join(", ")
         );
         CallToolResult::text(info)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn static_tools_include_delete_record() {
+        let tools = D365McpServer::get_tools_static();
+
+        assert!(tools.iter().any(|tool| tool.name == "delete_record"));
+    }
+
+    #[test]
+    fn parse_delete_key_prefers_raw_key_expression() {
+        let mut args = HashMap::new();
+        args.insert(
+            "key".to_string(),
+            json!("dataAreaId='bc',SalesOrderNumber='SO-001'"),
+        );
+        args.insert("id".to_string(), json!("ignored"));
+
+        assert_eq!(
+            parse_delete_key(&args).unwrap(),
+            "dataAreaId='bc',SalesOrderNumber='SO-001'"
+        );
+    }
+
+    #[test]
+    fn parse_delete_key_formats_simple_string_id() {
+        let mut args = HashMap::new();
+        args.insert("id".to_string(), json!("CUS-001"));
+
+        assert_eq!(parse_delete_key(&args).unwrap(), "'CUS-001'");
+    }
+
+    #[test]
+    fn parse_delete_key_keeps_numeric_id_unquoted() {
+        let mut args = HashMap::new();
+        args.insert("id".to_string(), json!("5637144576"));
+
+        assert_eq!(parse_delete_key(&args).unwrap(), "5637144576");
     }
 }
 
@@ -309,6 +402,32 @@ fn parse_number_arg(args: &HashMap<String, Value>, key: &str) -> Option<usize> {
     })
 }
 
+fn parse_delete_key(args: &HashMap<String, Value>) -> Result<String, String> {
+    if let Some(key) = args.get("key").and_then(|v| v.as_str()) {
+        let key = key.trim();
+        if !key.is_empty() {
+            return Ok(key.trim_matches(['(', ')']).to_string());
+        }
+    }
+
+    if let Some(id) = args.get("id").and_then(|v| v.as_str()) {
+        let id = id.trim();
+        if !id.is_empty() {
+            return Ok(format_simple_key(id));
+        }
+    }
+
+    Err("Missing required parameter: key or id".to_string())
+}
+
+fn format_simple_key(id: &str) -> String {
+    if id.starts_with('\'') || id.contains('=') || id.parse::<i64>().is_ok() {
+        id.to_string()
+    } else {
+        format!("'{}'", id)
+    }
+}
+
 impl D365McpServer {
     /// Force refresh metadata cache
     async fn refresh_metadata(&self) -> CallToolResult {
@@ -325,8 +444,7 @@ impl D365McpServer {
                     "Metadata cache refreshed successfully.\n\
                      - Size: {} KB\n\
                      - Entities found: {}",
-                    size_kb,
-                    entity_count
+                    size_kb, entity_count
                 ))
             }
             Err(e) => CallToolResult::error(format!("Failed to refresh metadata: {}", e)),
@@ -350,9 +468,9 @@ impl D365McpServer {
         match crate::odata::ODataClient::parse_entity_from_metadata(&metadata, entity) {
             Ok((properties, nav_properties, key_fields)) => {
                 let mut output = String::new();
-                
+
                 output.push_str(&format!("## Entity: {}\n\n", entity));
-                
+
                 // Key fields
                 if !key_fields.is_empty() {
                     output.push_str("### Key Fields\n");
@@ -361,22 +479,25 @@ impl D365McpServer {
                     }
                     output.push('\n');
                 }
-                
+
                 // Properties
                 output.push_str(&format!("### Properties ({} fields)\n", properties.len()));
                 for prop in &properties {
                     output.push_str(&format!("- {}\n", prop));
                 }
                 output.push('\n');
-                
+
                 // Navigation properties (expandable)
                 if !nav_properties.is_empty() {
-                    output.push_str(&format!("### Navigation Properties (expandable via $expand) ({} fields)\n", nav_properties.len()));
+                    output.push_str(&format!(
+                        "### Navigation Properties (expandable via $expand) ({} fields)\n",
+                        nav_properties.len()
+                    ));
                     for nav in &nav_properties {
                         output.push_str(&format!("- {}\n", nav));
                     }
                 }
-                
+
                 CallToolResult::text(output)
             }
             Err(e) => CallToolResult::error(format!("Failed to parse entity metadata: {}", e)),

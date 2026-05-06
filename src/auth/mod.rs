@@ -70,7 +70,7 @@ impl Default for AuthType {
 
 impl std::str::FromStr for AuthType {
     type Err = String;
-    
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "azure" | "azuread" | "azure_ad" | "entra" => Ok(AuthType::AzureAd),
@@ -114,7 +114,7 @@ impl OAuth2Auth {
         } else {
             Client::new()
         };
-        
+
         Self {
             config,
             http_client,
@@ -171,24 +171,33 @@ impl OAuth2Auth {
                 } else {
                     format!("{}/.default", resource)
                 };
-                
+
                 vec![
                     ("grant_type".to_string(), "client_credentials".to_string()),
                     ("client_id".to_string(), self.config.client_id.clone()),
-                    ("client_secret".to_string(), self.config.client_secret.clone()),
+                    (
+                        "client_secret".to_string(),
+                        self.config.client_secret.clone(),
+                    ),
                     ("scope".to_string(), scope),
                 ]
             }
             AuthType::Adfs => {
                 // ADFS uses resource parameter instead of scope
-                let resource = self.config.resource.as_ref()
+                let resource = self
+                    .config
+                    .resource
+                    .as_ref()
                     .map(|r| r.clone())
                     .unwrap_or_else(|| resource.to_string());
-                
+
                 vec![
                     ("grant_type".to_string(), "client_credentials".to_string()),
                     ("client_id".to_string(), self.config.client_id.clone()),
-                    ("client_secret".to_string(), self.config.client_secret.clone()),
+                    (
+                        "client_secret".to_string(),
+                        self.config.client_secret.clone(),
+                    ),
                     ("resource".to_string(), resource),
                 ]
             }
@@ -214,9 +223,10 @@ impl OAuth2Auth {
             )));
         }
 
-        let token_response: TokenResponse = response.json().await.map_err(|e| {
-            AuthError::ParseError(format!("Failed to parse token response: {}", e))
-        })?;
+        let token_response: TokenResponse = response
+            .json()
+            .await
+            .map_err(|e| AuthError::ParseError(format!("Failed to parse token response: {}", e)))?;
 
         // Cache the token
         let cached = CachedToken {
@@ -248,11 +258,7 @@ impl OAuth2Auth {
         if let Ok(url) = Url::parse(endpoint) {
             format!("{}://{}", url.scheme(), url.host_str().unwrap_or(""))
         } else {
-            endpoint
-                .split('/')
-                .take(3)
-                .collect::<Vec<_>>()
-                .join("/")
+            endpoint.split('/').take(3).collect::<Vec<_>>().join("/")
         }
     }
 }
@@ -307,7 +313,10 @@ mod tests {
             insecure_ssl: false,
         });
         assert_eq!(auth.config.auth_type, AuthType::Adfs);
-        assert_eq!(auth.token_endpoint(), "https://fs.example.com/adfs/oauth2/token");
+        assert_eq!(
+            auth.token_endpoint(),
+            "https://fs.example.com/adfs/oauth2/token"
+        );
     }
 
     #[test]

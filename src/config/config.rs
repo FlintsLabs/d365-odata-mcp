@@ -142,10 +142,10 @@ impl Config {
     /// Environment variables take precedence over file config
     pub fn to_runtime(&self) -> Result<RuntimeConfig, Box<dyn std::error::Error>> {
         // Required env vars (no defaults)
-        let tenant_id = env::var("TENANT_ID")
-            .map_err(|_| "TENANT_ID environment variable is required")?;
-        let client_id = env::var("CLIENT_ID")
-            .map_err(|_| "CLIENT_ID environment variable is required")?;
+        let tenant_id =
+            env::var("TENANT_ID").map_err(|_| "TENANT_ID environment variable is required")?;
+        let client_id =
+            env::var("CLIENT_ID").map_err(|_| "CLIENT_ID environment variable is required")?;
         let client_secret = env::var("CLIENT_SECRET")
             .map_err(|_| "CLIENT_SECRET environment variable is required")?;
 
@@ -169,11 +169,11 @@ impl Config {
 
         // Auth type (azure or adfs)
         let auth_type = env::var("AUTH_TYPE").unwrap_or_else(|_| "azure".to_string());
-        
+
         // Custom token URL (for ADFS)
         let token_url = env::var("TOKEN_URL").ok();
-        
-        // Resource/audience (for ADFS) 
+
+        // Resource/audience (for ADFS)
         let resource = env::var("RESOURCE").ok();
 
         // Skip SSL verification (for self-signed certificates)
@@ -203,7 +203,9 @@ impl Config {
             retry_delay_ms: self.global.retry_delay_ms.unwrap_or(1000),
             log_level: obs.log_level.unwrap_or_else(|| "info".to_string()),
             enable_tracing: obs.enable_tracing.unwrap_or(false),
-            delta_storage_path: delta.storage_path.unwrap_or_else(|| "./delta_state.json".to_string()),
+            delta_storage_path: delta
+                .storage_path
+                .unwrap_or_else(|| "./delta_state.json".to_string()),
             entities: self.entities.clone().unwrap_or_default(),
             metadata_cache_ttl_secs,
         })
