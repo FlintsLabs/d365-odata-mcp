@@ -5,6 +5,10 @@
 
 An MCP (Model Context Protocol) server that enables AI assistants to query **Microsoft Dynamics 365** data via OData API. Supports both **Dataverse** and **Finance & Operations (F&O)**.
 
+## For AI Assistants
+
+If you want an AI assistant to understand this repository before helping with changes, ask it to read [`AI_CONTEXT.md`](AI_CONTEXT.md) first. That file gives a compact overview of the architecture, runtime flow, MCP tools, safety rules, and release process.
+
 ## Features
 
 - ✅ Full OData query support: `$filter`, `$select`, `$orderby`, `$top`, `$skip`, `$expand`, `$count`
