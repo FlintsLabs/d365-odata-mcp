@@ -67,10 +67,11 @@ Required environment variables:
 ```text
 TENANT_ID
 CLIENT_ID
-CLIENT_SECRET
 ENDPOINT
 PRODUCT
 ```
+
+`CLIENT_SECRET` is required by default. If `USE_KEYCHAIN=true`, the binary reads the secret from the OS native secret store instead of requiring `CLIENT_SECRET`.
 
 Optional environment variables:
 
@@ -80,9 +81,14 @@ TOKEN_URL
 RESOURCE
 METADATA_CACHE_TTL
 INSECURE_SSL
+USE_KEYCHAIN
+CLIENT_SECRET_KEYCHAIN_SERVICE
+CLIENT_SECRET_KEYCHAIN_ACCOUNT
 ```
 
 Environment variables override file config. Runtime config is resolved in `Config::to_runtime`.
+
+Secret-store lookup uses `CLIENT_SECRET_KEYCHAIN_SERVICE` as the service and `CLIENT_SECRET_KEYCHAIN_ACCOUNT` as the account. If account is omitted, it defaults to `CLIENT_ID`. On macOS this maps to a generic password item that can be created with `security add-generic-password -a "<CLIENT_ID>" -s "<service>" -w "<CLIENT_SECRET>" -U`.
 
 ## Authentication
 
@@ -167,7 +173,7 @@ git push origin vx.y.z
 gh release create vx.y.z --title "vx.y.z" --notes "..."
 ```
 
-The GitHub workflow publishes to crates.io when a release is published.
+The GitHub workflow publishes to crates.io with Trusted Publishing when a release is published. The crates.io trusted publisher configuration must match owner `FlintsLabs`, repository `d365-odata-mcp`, and workflow filename `publish.yml`.
 
 ## Guidance for AI Assistants
 

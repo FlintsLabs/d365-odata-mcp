@@ -72,6 +72,48 @@ ENDPOINT = "https://your-org.crm.dynamics.com/api/data/v9.2/"
 PRODUCT = "dataverse"
 ```
 
+### Store `CLIENT_SECRET` in the OS Secret Store
+
+By default, `d365-odata-mcp` reads `CLIENT_SECRET` from the MCP client's environment config. To keep the secret out of `~/.codex/config.toml`, enable native secret store lookup:
+
+```toml
+[mcp_servers.d365]
+command = "d365-odata-mcp"
+
+[mcp_servers.d365.env]
+TENANT_ID = "your-tenant-id"
+CLIENT_ID = "your-client-id"
+USE_KEYCHAIN = "true"
+CLIENT_SECRET_KEYCHAIN_SERVICE = "bio-dataverse-sales-uat-client-secret"
+ENDPOINT = "https://your-org.crm.dynamics.com/api/data/v9.2/"
+PRODUCT = "dataverse"
+```
+
+Secret lookup uses this pair:
+
+```text
+service = CLIENT_SECRET_KEYCHAIN_SERVICE
+account = CLIENT_SECRET_KEYCHAIN_ACCOUNT, or CLIENT_ID when account is omitted
+```
+
+On macOS, create or update the Keychain item with:
+
+```bash
+security add-generic-password \
+  -a "<CLIENT_ID>" \
+  -s "bio-dataverse-sales-uat-client-secret" \
+  -w "<CLIENT_SECRET>" \
+  -U
+```
+
+If your Keychain item uses a different account name, set `CLIENT_SECRET_KEYCHAIN_ACCOUNT` explicitly:
+
+```toml
+USE_KEYCHAIN = "true"
+CLIENT_SECRET_KEYCHAIN_SERVICE = "bio-dataverse-sales-uat-client-secret"
+CLIENT_SECRET_KEYCHAIN_ACCOUNT = "bio-sales-uat"
+```
+
 **For F&O:**
 ```toml
 [mcp_servers.d365]
@@ -226,7 +268,7 @@ Force refresh the cached metadata (useful when schema changes):
 |----------|-------------|----------|
 | `TENANT_ID` | Azure AD Tenant ID (or `adfs` for ADFS) | ✅ |
 | `CLIENT_ID` | Azure AD/ADFS Application ID | ✅ |
-| `CLIENT_SECRET` | Azure AD/ADFS Client Secret | ✅ |
+| `CLIENT_SECRET` | Azure AD/ADFS Client Secret | ✅ unless `USE_KEYCHAIN=true` |
 | `ENDPOINT` | D365 OData endpoint URL | ✅ |
 | `PRODUCT` | `dataverse` or `finops` | ✅ |
 | `AUTH_TYPE` | `azure` (default) or `adfs` | ❌ |
@@ -234,6 +276,9 @@ Force refresh the cached metadata (useful when schema changes):
 | `RESOURCE` | Resource/audience (ADFS only) | ❌ |
 | `METADATA_CACHE_TTL` | Metadata cache TTL in seconds (default: 900 = 15 min) | ❌ |
 | `INSECURE_SSL` | Skip SSL verification for self-signed certs (`true`/`false`) | ❌ |
+| `USE_KEYCHAIN` | Read `CLIENT_SECRET` from the OS native secret store (`true`/`false`, default `false`) | ❌ |
+| `CLIENT_SECRET_KEYCHAIN_SERVICE` | Secret store service name used when `USE_KEYCHAIN=true` | ✅ when `USE_KEYCHAIN=true` |
+| `CLIENT_SECRET_KEYCHAIN_ACCOUNT` | Secret store account name; defaults to `CLIENT_ID` when omitted | ❌ |
 
 ---
 

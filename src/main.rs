@@ -15,6 +15,8 @@ use std::io::Write;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
+type ServerState = Result<D365McpServer, String>;
+
 fn log_to_file(msg: &str) {
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
@@ -54,9 +56,14 @@ fn main() {
                 println!("Environment variables:");
                 println!("  TENANT_ID      Azure AD tenant ID (required)");
                 println!("  CLIENT_ID      Azure AD client/app ID (required)");
-                println!("  CLIENT_SECRET  Azure AD client secret (required)");
+                println!(
+                    "  CLIENT_SECRET  Azure AD client secret (required unless USE_KEYCHAIN=true)"
+                );
                 println!("  ENDPOINT       D365 OData endpoint URL (required)");
                 println!("  PRODUCT        'dataverse' or 'finops' (required)");
+                println!("  USE_KEYCHAIN   Read CLIENT_SECRET from native secret store (optional)");
+                println!("  CLIENT_SECRET_KEYCHAIN_SERVICE  Secret store service name (required when USE_KEYCHAIN=true)");
+                println!("  CLIENT_SECRET_KEYCHAIN_ACCOUNT  Secret store account name (optional, defaults to CLIENT_ID)");
                 log_to_file("Exiting: --help flag");
                 return;
             }
@@ -83,11 +90,11 @@ async fn async_main() {
     let server = match create_server() {
         Ok(s) => {
             log_to_file("Server configured successfully");
-            Some(s)
+            Ok(s)
         }
         Err(e) => {
             log_to_file(&format!("Configuration incomplete: {}", e));
-            None
+            Err(e.to_string())
         }
     };
 
@@ -144,7 +151,7 @@ fn create_server() -> Result<D365McpServer, Box<dyn std::error::Error>> {
     Ok(D365McpServer::new(client, Arc::new(runtime_config)))
 }
 
-async fn run_stdio_loop(server: Option<D365McpServer>) -> Result<(), std::io::Error> {
+async fn run_stdio_loop(server: ServerState) -> Result<(), std::io::Error> {
     let stdin = tokio::io::stdin();
     let mut stdout = tokio::io::stdout();
     let mut reader = BufReader::new(stdin);
@@ -211,10 +218,7 @@ async fn run_stdio_loop(server: Option<D365McpServer>) -> Result<(), std::io::Er
     Ok(())
 }
 
-async fn handle_request(
-    server: &Option<D365McpServer>,
-    request: JsonRpcRequest,
-) -> JsonRpcResponse {
+async fn handle_request(server: &ServerState, request: JsonRpcRequest) -> JsonRpcResponse {
     let id = request.id.clone();
 
     match request.method.as_str() {
@@ -243,8 +247,8 @@ async fn handle_request(
         "tools/list" => {
             log_to_file("Handling: tools/list");
             let tools = match server {
-                Some(s) => s.get_tools(),
-                None => D365McpServer::get_tools_static(),
+                Ok(s) => s.get_tools(),
+                Err(_) => D365McpServer::get_tools_static(),
             };
             let result = ListToolsResult { tools };
             JsonRpcResponse::success(id, serde_json::to_value(result).unwrap())
@@ -253,11 +257,10 @@ async fn handle_request(
         "tools/call" => {
             log_to_file("Handling: tools/call");
             let server = match server {
-                Some(s) => s,
-                None => {
-                    let result = CallToolResult::error(
-                        "Server not configured. Missing environment variables: TENANT_ID, CLIENT_ID, CLIENT_SECRET, ENDPOINT".to_string()
-                    );
+                Ok(s) => s,
+                Err(config_error) => {
+                    let result =
+                        CallToolResult::error(format!("Server not configured. {config_error}"));
                     return JsonRpcResponse::success(id, serde_json::to_value(result).unwrap());
                 }
             };
